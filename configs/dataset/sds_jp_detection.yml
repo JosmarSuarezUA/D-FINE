@@ -5,7 +5,7 @@ evaluator:
   iou_types: ['bbox', ]
 
 num_classes: 1 # your dataset classes
-remap_mscoco_category: False
+remap_mscoco_category: True
 
 train_dataloader:
   type: DataLoader
@@ -16,7 +16,6 @@ train_dataloader:
     return_masks: False
     transforms:
       type: Compose
-      ops: ~
   shuffle: True
   num_workers: 4
   drop_last: True
@@ -32,7 +31,6 @@ val_dataloader:
     return_masks: False
     transforms:
       type: Compose
-      ops: ~
   shuffle: False
   num_workers: 4
   drop_last: False

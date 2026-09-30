@@ -11,12 +11,11 @@ train_dataloader:
   type: DataLoader
   dataset:
     type: CocoDetection
-    img_folder: /data2/detection_datasets/raw/synbase/SyntheticBodiesAtSea/images/train/
-    ann_file: /data2/detection_datasets/raw/synbase/SyntheticBodiesAtSea/annotations/coco/instances_train.json
+    ann_file: /data2/detection_datasets/processed/synbase_coco/instances_train.json
+    img_folder: /data2/detection_datasets/processed/synbase_yolov5/images/train
     return_masks: False
     transforms:
       type: Compose
-      ops: ~
   shuffle: True
   num_workers: 4
   drop_last: True
@@ -27,12 +26,11 @@ val_dataloader:
   type: DataLoader
   dataset:
     type: CocoDetection
-    img_folder: /data2/detection_datasets/raw/synbase/SyntheticBodiesAtSea/images/val/
-    ann_file: /data2/detection_datasets/raw/synbase/SyntheticBodiesAtSea/annotations/coco/instances_val.json
+    ann_file: /data2/detection_datasets/processed/synbase_coco/instances_val.json
+    img_folder: /data2/detection_datasets/processed/synbase_yolov5/images/val
     return_masks: False
     transforms:
       type: Compose
-      ops: ~
   shuffle: False
   num_workers: 4
   drop_last: False

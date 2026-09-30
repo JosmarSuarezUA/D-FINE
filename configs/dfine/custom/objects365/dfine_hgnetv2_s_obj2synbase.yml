@@ -1,0 +1,21 @@
+# D-FINE-S (Objects365 pretrained) fine-tuned on SeaDronesSee.
+# Everything is inherited from the two files below; later entries override earlier ones.
+__include__: [
+  'dfine_hgnetv2_s_obj2custom.yml',          # model, optimizer, augmentations, schedule
+  '../../../dataset/synbase_detection.yml',   # dataset: train/val paths, num_classes (must come last)
+]
+
+# Separate output folder per dataset, so checkpoints (best_stg1.pth, ...) aren't overwritten.
+output_dir: ./output/dfine_hgnetv2_s_obj2synbase
+exp_name: synbase_train
+
+# --- Optional: training length (defaults from obj2custom: 64 / 56 / 56) ---
+# Keep the last 8 epochs without augmentation (stage 2): stop_epoch = epochs - 8.
+epochs: 150
+# train_dataloader:
+#   dataset:
+#     transforms:
+#       policy:
+#         epoch: 92          # augmentations stop here
+#   collate_fn:
+#     stop_epoch: 92         # multi-scale stops, stage 2 starts (reloads best_stg1.pth)
