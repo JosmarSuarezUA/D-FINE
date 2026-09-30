@@ -5,14 +5,14 @@ evaluator:
   iou_types: ['bbox', ]
 
 num_classes: 1 # your dataset classes
-remap_mscoco_category: True
+remap_mscoco_category: Trued
 
 train_dataloader:
   type: DataLoader
   dataset:
     type: CocoDetection
-    img_folder: /data2/detection_datasets/raw/SeaDronesSee_Juanpe/images/training
-    ann_file: /data2/detection_datasets/processed/sds_jp_coco/instances_train.json
+    ann_file: /data2/detection_datasets/processed/afo_humans_no_vehicle_050_coco/instances_train.json
+    img_folder: /data2/detection_datasets/processed/afo_humans_no_vehicle_050_yolov5/images/train
     return_masks: False
     transforms:
       type: Compose
@@ -26,8 +26,8 @@ val_dataloader:
   type: DataLoader
   dataset:
     type: CocoDetection
-    img_folder: /data2/detection_datasets/raw/SeaDronesSee_Juanpe/images/validation
-    ann_file: /data2/detection_datasets/processed/sds_jp_coco/instances_val.json
+    ann_file: /data2/detection_datasets/processed/afo_humans_no_vehicle_050_coco/instances_val.json
+    img_folder: /data2/detection_datasets/processed/afo_humans_no_vehicle_050_yolov5/images/val
     return_masks: False
     transforms:
       type: Compose

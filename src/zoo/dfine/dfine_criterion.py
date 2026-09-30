@@ -16,7 +16,8 @@ import torchvision
 
 from ...core import register
 from ...misc.dist_utils import get_world_size, is_dist_available_and_initialized
-from .box_ops import box_cxcywh_to_xyxy, box_iou, generalized_box_iou
+from ...misc.box_ops import elementwise_box_iou, elementwise_generalized_box_iou
+from .box_ops import box_cxcywh_to_xyxy
 from .dfine_utils import bbox2distance
 
 
@@ -89,8 +90,8 @@ class DFINECriterion(nn.Module):
         if values is None:
             src_boxes = outputs["pred_boxes"][idx]
             target_boxes = torch.cat([t["boxes"][i] for t, (_, i) in zip(targets, indices)], dim=0)
-            ious, _ = box_iou(box_cxcywh_to_xyxy(src_boxes), box_cxcywh_to_xyxy(target_boxes))
-            ious = torch.diag(ious).detach()
+            ious, _ = elementwise_box_iou(box_cxcywh_to_xyxy(src_boxes), box_cxcywh_to_xyxy(target_boxes))
+            ious = ious.detach()
         else:
             ious = values
 
@@ -128,8 +129,10 @@ class DFINECriterion(nn.Module):
         loss_bbox = F.l1_loss(src_boxes, target_boxes, reduction="none")
         losses["loss_bbox"] = loss_bbox.sum() / num_boxes
 
-        loss_giou = 1 - torch.diag(
-            generalized_box_iou(box_cxcywh_to_xyxy(src_boxes), box_cxcywh_to_xyxy(target_boxes))
+        # Element-wise GIoU of matched pairs; avoids building an [N, N] matrix
+        # just to take its diagonal (N = matched boxes in the batch).
+        loss_giou = 1 - elementwise_generalized_box_iou(
+            box_cxcywh_to_xyxy(src_boxes), box_cxcywh_to_xyxy(target_boxes)
         )
         loss_giou = loss_giou if boxes_weight is None else loss_giou * boxes_weight
         losses["loss_giou"] = loss_giou.sum() / num_boxes
@@ -169,10 +172,8 @@ class DFINECriterion(nn.Module):
                 self.fgl_targets_dn if "is_dn" in outputs else self.fgl_targets
             )
 
-            ious = torch.diag(
-                box_iou(
-                    box_cxcywh_to_xyxy(outputs["pred_boxes"][idx]), box_cxcywh_to_xyxy(target_boxes)
-                )[0]
+            ious, _ = elementwise_box_iou(
+                box_cxcywh_to_xyxy(outputs["pred_boxes"][idx]), box_cxcywh_to_xyxy(target_boxes)
             )
             weight_targets = ious.unsqueeze(-1).repeat(1, 1, 4).reshape(-1).detach()
 
@@ -445,15 +446,12 @@ class DFINECriterion(nn.Module):
         target_boxes = torch.cat([t["boxes"][j] for t, (_, j) in zip(targets, indices)], dim=0)
 
         if self.boxes_weight_format == "iou":
-            iou, _ = box_iou(
+            iou, _ = elementwise_box_iou(
                 box_cxcywh_to_xyxy(src_boxes.detach()), box_cxcywh_to_xyxy(target_boxes)
             )
-            iou = torch.diag(iou)
         elif self.boxes_weight_format == "giou":
-            iou = torch.diag(
-                generalized_box_iou(
-                    box_cxcywh_to_xyxy(src_boxes.detach()), box_cxcywh_to_xyxy(target_boxes)
-                )
+            iou = elementwise_generalized_box_iou(
+                box_cxcywh_to_xyxy(src_boxes.detach()), box_cxcywh_to_xyxy(target_boxes)
             )
         else:
             raise AttributeError()

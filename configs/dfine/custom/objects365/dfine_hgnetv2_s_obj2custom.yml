@@ -49,7 +49,7 @@ optimizer:
   weight_decay: 0.000125
 
 
-epochs: 64 # Early stop
+epochs: 150 # Early stop
 train_dataloader:
   dataset:
     transforms:
@@ -61,7 +61,7 @@ train_dataloader:
     base_size_repeat: 10
 
 ema:
-  warmups: 0
+  warmups: 1000
 
 lr_warmup_scheduler:
   warmup_duration: 0
