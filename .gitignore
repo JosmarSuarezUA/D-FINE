@@ -5,3 +5,10 @@ wandb/
 *.pth
 *.onnx
 dfine_results/
+# Domain-adaptation workflow
+.env
+*.local.yaml
+configs/local/
+output/
+results/
+weight/

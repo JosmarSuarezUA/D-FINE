@@ -4,33 +4,36 @@ evaluator:
   type: CocoEvaluator
   iou_types: ['bbox', ]
 
-num_classes: 1 # your dataset classes
-remap_mscoco_category: True
+num_classes: 777 # your dataset classes
+remap_mscoco_category: False
 
 train_dataloader:
   type: DataLoader
   dataset:
     type: CocoDetection
-    img_folder: /data2/detection_datasets/raw/SeaDronesSee_Juanpe/images/training
-    ann_file: /data2/detection_datasets/processed/sds_jp_coco/instances_train.json
+    img_folder: /data/yourdataset/train
+    ann_file: /data/yourdataset/train/train.json
     return_masks: False
     transforms:
       type: Compose
+      ops: ~
   shuffle: True
   num_workers: 4
   drop_last: True
   collate_fn:
     type: BatchImageCollateFunction
 
+
 val_dataloader:
   type: DataLoader
   dataset:
     type: CocoDetection
-    img_folder: /data2/detection_datasets/raw/SeaDronesSee_Juanpe/images/validation
-    ann_file: /data2/detection_datasets/processed/sds_jp_coco/instances_val.json
+    img_folder: /data/yourdataset/val
+    ann_file: /data/yourdataset/val/val.json
     return_masks: False
     transforms:
       type: Compose
+      ops: ~
   shuffle: False
   num_workers: 4
   drop_last: False

@@ -86,6 +86,109 @@ https://github.com/user-attachments/assets/e5933d8e-3c8a-400e-870b-4e452f5321d9
 
 </details>
 
+## 🌊 Domain-adaptation experiments (this fork)
+
+This fork adds a reproducible workflow to fine-tune D-FINE on your own datasets and evaluate
+every trained model on the test split of every dataset (cross-domain evaluation), using
+[da-eval](https://github.com/JosmarSuarezUA/da-eval), which is installed automatically.
+The upstream documentation follows below this section.
+
+### 1. Install
+
+Requirements: Linux with an NVIDIA GPU and driver. Choose one option.
+
+**Option A, uv:** install [uv](https://docs.astral.sh/uv/getting-started/installation/), then:
+
+```bash
+git clone https://github.com/JosmarSuarezUA/D-FINE.git && cd D-FINE
+uv sync
+```
+
+**Option B, Docker:** requires Docker and the
+[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
+
+```bash
+git clone https://github.com/JosmarSuarezUA/D-FINE.git && cd D-FINE
+cp .env.example .env          # set DATA_DIR to your datasets folder (and UID/GID, WANDB_API_KEY)
+docker compose build
+docker compose run --rm dfine    # opens a shell in the container, inside the repository
+uv sync                          # first time only; the environment is kept in a Docker volume
+```
+
+Your datasets folder is mounted read-only at the same path as on the host, so the same
+datasets YAML works inside and outside Docker. The root `Dockerfile` is upstream D-FINE's own
+image; this workflow uses `docker/Dockerfile`. All commands below are run from the repository
+root (in the container shell when using Docker).
+
+### 2. Pretrained weights
+
+- **Objects365 checkpoints** for fine-tuning (e.g. `dfine_s_obj365.pth`): see the
+  Objects365 table in the [Model Zoo](#model-zoo). The `configs/dfine/custom/objects365/*_obj2custom.yml`
+  configs are made for fine-tuning from them.
+- **HGNetv2 backbone** (only when training without `-t`): downloaded automatically to `weight/hgnetv2/`.
+
+### 3. Describe your datasets
+
+Copy [`datasets.example.yaml`](datasets.example.yaml) **outside the repository** and fill in
+your paths. Each dataset is COCO (annotation JSON + image folder per split) or YOLOv5
+(`yolo: /path/to/data.yaml`); no particular folder layout is required. Then check it:
+
+```bash
+uv run da-eval check --datasets /path/to/my_datasets.yaml
+```
+
+### 4. Fine-tune
+
+With `da-train` (dataset paths and number of classes come from your datasets YAML):
+
+```bash
+uv run da-train --config configs/dfine/custom/objects365/dfine_hgnetv2_s_obj2custom.yml \
+    --datasets /path/to/my_datasets.yaml --source my_dataset --gpus 0 \
+    -- --use-amp --seed 0 -t /path/to/dfine_s_obj365.pth
+```
+
+Checkpoints go to `output/<config name>_<source>/`. Everything after `--` is passed to `train.py`
+(e.g. `-u key=value` to override config keys). The training length is set by `epochs`, the
+augmentation `policy.epoch` and `collate_fn.stop_epoch` (stage 2 starts there and reloads
+`best_stg1.pth`); keep stage 2 short, e.g. `stop_epoch = epochs - 8`, and change them together.
+
+**Your own config files:** put them in `configs/local/` (git-ignored, so private paths are never
+committed). A config there can include an upstream config first and override only what changes;
+later includes and the file's own keys win:
+
+```yaml
+# configs/local/dfine_hgnetv2_s_obj2my_dataset.yml
+__include__: [
+  '../dfine/custom/objects365/dfine_hgnetv2_s_obj2custom.yml',
+  'my_dataset_detection.yml',     # num_classes, remap_mscoco_category, train/val img_folder + ann_file
+]
+output_dir: ./output/dfine_hgnetv2_s_obj2my_dataset
+```
+
+```bash
+CUDA_VISIBLE_DEVICES=0 uv run torchrun --master_port=7777 --nproc_per_node=1 train.py \
+    -c configs/local/dfine_hgnetv2_s_obj2my_dataset.yml --use-amp --seed 0 -t /path/to/dfine_s_obj365.pth
+```
+
+Keep each top-level key **once** per file (e.g. a single `train_dataloader:` block): in YAML a
+repeated key replaces the earlier one entirely.
+
+### 5. Evaluate
+
+Evaluate each checkpoint on the test split of every dataset in your YAML:
+
+```bash
+uv run da-eval --model dfine --config configs/dfine/custom/objects365/dfine_hgnetv2_s_obj2custom.yml \
+    --datasets /path/to/my_datasets.yaml \
+    --checkpoint my_dataset=output/dfine_hgnetv2_s_obj2custom_my_dataset/best_stg1.pth \
+    --checkpoint other_dataset=output/dfine_hgnetv2_s_obj2custom_other_dataset/best_stg1.pth \
+    --wandb-project my_project       # optional (needs WANDB_API_KEY)
+```
+
+Results (metrics CSV, curves, embeddings, domain-gap MMD, t-SNE) go to `results/dfine/`.
+The evaluation protocol is described in the
+[da-eval README](https://github.com/JosmarSuarezUA/da-eval#protocol).
+
 ## 🚀 Updates
 - [x] **\[2024.10.18\]** Release D-FINE series.
 - [x] **\[2024.10.25\]** Add custom dataset finetuning configs ([#7](https://github.com/Peterande/D-FINE/issues/7)).

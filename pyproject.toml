@@ -31,4 +31,4 @@ requires = ["uv_build>=0.12.2,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
-da-eval = { path = "../da-eval", editable = true }
+da-eval = { git = "https://github.com/JosmarSuarezUA/da-eval", rev = "v0.2.1" }
