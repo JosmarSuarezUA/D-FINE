@@ -23,12 +23,9 @@ dependencies = [
     "wandb>=0.30.0",
 ]
 
-[project.scripts]
-d-fine = "d_fine:main"
-
-[build-system]
-requires = ["uv_build>=0.12.2,<0.13.0"]
-build-backend = "uv_build"
+# D-FINE is used as an application (train.py, src/), not installed as a package.
+[tool.uv]
+package = false
 
 [tool.uv.sources]
 da-eval = { git = "https://github.com/JosmarSuarezUA/da-eval", rev = "v0.2.1" }

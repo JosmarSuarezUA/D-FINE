@@ -519,7 +519,7 @@ wheels = [
 [[package]]
 name = "d-fine"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "calflops" },
     { name = "da-eval" },
